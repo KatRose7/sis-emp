@@ -27,7 +27,7 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sess ->
+                .sessionManagement(sess -> 
                         sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
@@ -35,12 +35,14 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/**",
-                                "/auth/login"
+                                "/api/**",      // Permite acceder a /api/** solo si está autenticado
+                                "/auth/login"   // Permite acceder a /auth/login sin autenticación
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/plans/**").hasRole("ADMIN")  // Restringe acceso a /api/plans a usuarios con rol ADMIN
+                        .anyRequest().authenticated()  // Los demás endpoints requieren autenticación
                 );
 
+        // Agrega el filtro JWT antes del filtro de autenticación predeterminado
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -52,7 +54,11 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-
-
+    // Este es el PasswordEncoder, si usas BCrypt para las contraseñas
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }
+
 
